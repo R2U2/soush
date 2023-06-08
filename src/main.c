@@ -119,6 +119,11 @@ void soush_runCommand(string line, string origLine) {
         for (index++; line.buffer[index]; index++)
             stringPush(&value, line.buffer[index]);
         envSet(name, value);
+    } else if(!strcmp(argv.buffer[0], "cd")) {
+        if (argv.buffer[1]) {
+            if (chdir(argv.buffer[1])) perror("cd");
+        } else
+            chdir(getpwuid(getuid())->pw_dir);
     } else
         forkExec(argv.buffer);
 
