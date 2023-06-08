@@ -10,5 +10,5 @@ typedef struct {
     long int position;
 } envGet_var;
 
-envGet_var envGet(string name);
+envGet_var envGet(char *name);
 long int envSet(string name, string value);

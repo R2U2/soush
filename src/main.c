@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <pwd.h>
 #include "exec.h"
 #include "env.h"
 #include "str.h"
@@ -17,9 +19,44 @@ void soush_updatePrompt(string *prompt, const char *PS1);
 
 int main() {
     signal(SIGINT, SIG_IGN);
+
+    string soushrc = stringInit();
+    stringPushString(&soushrc, getpwuid(getuid())->pw_dir);
+    stringPushString(&soushrc, "/.soushrc");
+    if (!access(soushrc.buffer, F_OK)) {
+        FILE *rcFile = fopen(soushrc.buffer, "r");
+        string rc = stringInit();
+        char ch;
+        while ((ch = fgetc(rcFile)) != EOF)
+            stringPush(&rc, ch);
+        struct {
+            char **buffer;
+            size_t size;
+        } lines;
+        lines.size = 0;
+        lines.buffer = malloc(0);
+        char *line = strtok(rc.buffer, "\n\r");
+        while (line != NULL) {
+            lines.buffer = realloc(lines.buffer, (++lines.size) * sizeof(char*));
+            lines.buffer[lines.size-1] = line;
+            line = strtok(NULL, "\n\r");
+        }
+        for (size_t index = 0; index < lines.size; index++) {
+            string strLine = stringInit();
+            stringPushString(&strLine, lines.buffer[index]);
+            soush_runCommand(parseLine(strLine), strLine);
+            stringFree(&strLine);
+        }
+        free(lines.buffer);
+        stringFree(&rc);
+        fclose(rcFile);
+    }
+    if (envGet("PS1").position == -1)
+        envSet(stringInitString("PS1"), stringInitString(SOUSH_PS1));
+    
     string prompt = stringInit();
-    soush_updatePrompt(&prompt, SOUSH_PS1);
     while (1) {
+        soush_updatePrompt(&prompt, envGet("PS1").variable.value.buffer);
         char *input = readline(prompt.buffer);
         if (!strcmp(input, "exit"))
             exit(EXIT_SUCCESS);
@@ -71,7 +108,8 @@ void soush_runCommand(string line, string origLine) {
     else
         add_history(origLine.buffer);
     
-    if (strstr(argv.buffer[0], "=") != NULL) {
+    char *equal = strstr(argv.buffer[0], "=");
+    if (equal != NULL && equal != argv.buffer[0]) {
         char *pos = strstr(line.buffer, "=");
         string name = stringInit();
         string value = stringInit();
@@ -86,6 +124,7 @@ void soush_runCommand(string line, string origLine) {
 
     free(argv.buffer);
     stringFree(&word);
+    stringFree(&line);
 }
 void soush_updatePrompt(string *prompt, const char *PS1) {
     char cwd[PATH_MAX];

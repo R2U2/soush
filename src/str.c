@@ -13,6 +13,11 @@ string stringInit() {
     arr.length = 0;
     return arr;
 }
+string stringInitString(char *value) {
+    string str = stringInit();
+    stringPushString(&str, value);
+    return str;
+}
 void stringFree(string *arr) {
     free(arr->buffer);
     arr->length = 0;

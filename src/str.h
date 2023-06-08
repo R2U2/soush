@@ -9,6 +9,7 @@ typedef struct {
 } string;
 
 string stringInit();
+string stringInitString(char *value);
 void stringClear(string *arr);
 void stringFree(string *arr);
 

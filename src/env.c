@@ -8,15 +8,13 @@ struct {
     size_t size;
 } vars;
 
-void envInit()
-{
+void envInit() {
     vars.buffer = malloc(0);
     vars.size = 0;
 }
-envGet_var envGet(string name)
-{
+envGet_var envGet(char *name) {
     for (size_t pos = 0; pos < vars.size; pos++) {
-        if (!strcmp(vars.buffer[pos].name.buffer, name.buffer)) {
+        if (!strcmp(vars.buffer[pos].name.buffer, name)) {
             envGet_var out;
             out.variable = vars.buffer[pos];
             out.position = pos;
@@ -29,9 +27,8 @@ envGet_var envGet(string name)
     out.position = -1;
     return out;
 }
-long int envSet(string name, string value)
-{
-    envGet_var existVar = envGet(name);
+long int envSet(string name, string value) {
+    envGet_var existVar = envGet(name.buffer);
     if (existVar.position == -1) {
         var newVar;
         newVar.name = name;
