@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include <string.h>
 #include "str.h"
-#include "env.h"
+#include "var.h"
+
+char *puncts = ".,/\\)()[]{}*&^%$#@!?~`'\":;|-+\0 ";
 
 string parseLine(string line) {
     string outLine = stringInit();
@@ -15,21 +18,24 @@ string parseLine(string line) {
         if (!checkingVar && line.buffer[index] == '$')
             checkingVar = true;
         else if(checkingVar) {
-            if (ispunct(line.buffer[index]) || line.buffer[index] == ' '
-                || line.buffer[index] == '\0' || line.buffer[index] == '$') {
+            if (strchr(puncts, line.buffer[index])) {
                 if (line.buffer[index] == '$') {
                     stringPush(&outLine, '$');
                     checkingVar = false;
                     continue;
                 }
                 if (varName.length == 0) {
-                    fprintf(stderr, "soush: Expected a variable name after $\n");
-                    return stringInit();
-                }
+                    if (line.buffer[index] == '?') {
+                        stringPush(&varName, '?');
+                    } else {
+                        fprintf(stderr, "soush: Expected a variable name after $\n");
+                        return stringInit();
+                    }
+                } else 
+                    stringPush(&outLine, line.buffer[index]);
                 checkingVar = false;
-                stringPushString(&outLine, envGet(varName.buffer).variable.value.buffer);
+                stringPushString(&outLine, varGet(varName.buffer).variable.value.buffer);
                 stringClear(&varName);
-                stringPush(&outLine, line.buffer[index]);
             } else
                 stringPush(&varName, line.buffer[index]);
         } else if (line.buffer[index])

@@ -1,3 +1,3 @@
 #pragma once
 
-void forkExec(char **argv);
+int forkExec(char **argv);
